@@ -26,8 +26,8 @@ __NOTE__: this is really rough so far, use with caution.
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd <repository-name>
+   git clone https://github.com/mangobiche/beauthy
+   cd beauthy
    ```
 
 2. Install the required packages using `uv`, the project's package manager:
