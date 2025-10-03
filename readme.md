@@ -1,6 +1,6 @@
 # BeAuthy 🚀
 
-BeAuthy is a Python script designed to interact with an [Authentik](https://github.com/goauthentik/authentik/) server and make it prettier (beauty-authentik). It started because I'm lazy and didn't want to manually setup every icon in my homelab (23 apps and counting), so I wanted a more sustaible and cleaner way to do it. 
+BeAuthy is a Python script designed to interact with an [Authentik](https://github.com/goauthentik/authentik/) server and make it prettier (beauty-authentik). It started because I'm lazy and didn't want to manually setup every icon in my homelab (23 apps and counting), so I wanted a more sustainble and cleaner way to do it. 
 
 It automates the process of fetching applications, setting icons, updating metadata, and leveraging AI to generate descriptions and publisher information.
 
