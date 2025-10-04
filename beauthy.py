@@ -28,6 +28,7 @@ class BeAuthy(object):
         """
         self.hostname = hostname
         self.token = token
+        self.headers = {'Authorization': f'Bearer {self.token}'}
         self.apps = []
         self.icons_meta = []
         self.get_apps()
@@ -39,59 +40,26 @@ class BeAuthy(object):
         else:
            self.icons_meta = self.update_icons()
 
-    def request(self, method, category, headers=None, params=None, payload=None):
+    def check_response(self, response):
         """
-        Make a generic HTTP request to the Authentik API.
-
-        :param method: The HTTP method to use (GET, POST, PUT, DELETE, PATCH).
-        :param category: The API category endpoint.
-        :param headers: Optional dictionary of custom headers.
-        :param params: Optional list of parameters for the URL.
-        :param payload: Optional JSON payload for POST or PATCH requests.
-        :return: Response data if successful, otherwise None.
+        Generate the proper msg for errors in response. If not, pass it clean.
         """
-        if headers is None:
-            headers =  { 'Content-Type': 'application/json',
-                         'Authorization': f'Bearer {self.token}' }
-        if payload is None:
-            payload = {}
-        if params is None:
-            url = f"https://{self.hostname}/api/v3/{category}/"
-        else:
-            params_parsed = '/'.join([param for param in params])
-            url = f"https://{self.hostname}/api/v3/{category}/{params_parsed}/"
-
         try:
-            if method == "GET":
-                response = requests.get(url, headers=headers)
-            elif method == "POST":
-                response = requests.post(url, headers=headers, json=payload)
-            elif method == "PUT":
-                response = requests.put(url, headers=headers, json=payload)
-            elif method == "DELETE":
-                response = requests.delete(url, headers=headers, json=payload)
-            elif method == "PATCH":
-                response = requests.patch(url, headers=headers, json=payload)
+            if response.ok:
+                print(response)
             else:
-                raise ValueError("Unsupported method: %s" % method)
-
-            if not response.ok:
                 response.raise_for_status()
-            else:
-                if method == "GET":
-                    return response.json()['results']
-                else:
-                    return True
-
         except Exception as e:
-            print(repr(e))
+            print(f"{repr(e)}\n{response.content}")
 
     def get_apps(self):
         """
         Fetch all applications from the Authentik server.
         """
-        response = self.request('GET', 'core/applications')
-        self.apps = [app for app in response]
+        response = requests.get(f'https://{self.hostname}/api/v3/core/applications/',
+                                headers=self.headers)
+        self.check_response(response)
+        self.apps = [app for app in response.json()['results']]
 
     def core_applications_set_icon_create(self, slug, full_path):
         """
@@ -99,6 +67,7 @@ class BeAuthy(object):
 
         :param slug: The slug of the application.
         :param full_path: The path to the icon file.
+        """
         """
         if not os.path.isfile(full_path):
             print("File '%s' not found. Exiting" %full_path)
@@ -123,6 +92,7 @@ class BeAuthy(object):
         except Exception as e:
             print(repr(e))
         return None
+        """
 
     def core_applications_set_icon_url_create(self, slug, icon_url):
         """
@@ -133,9 +103,11 @@ class BeAuthy(object):
 
         NOTE: It takes quite a while to update after loading the urls
         """
-        self.request("POST", 'core/applications',
-                     params=[slug, 'set_icon_url'],
-                     payload={ 'url' : icon_url })
+        url = f"https://{self.hostname}/api/v3/core/applications/{slug}/set_icon_url/"
+        response = requests.post(url,
+                                 headers=self.headers,
+                                 json={ 'url' : icon_url })
+        self.check_response(response)
 
     def update_icons(self):
         """
@@ -247,8 +219,11 @@ class BeAuthy(object):
         :param slug: The slug of the application.
         :param payload: The JSON payload with fields to update.
         """
-        response = self.request('PATCH', 'core/applications', params=slug, payload=payload)
-
+        url = f"https://{self.hostname}/api/v3/core/applications/{slug}/partial_update/"
+        response = requests.patch(url,
+                                  headers=self.headers,
+                                  json=payload)
+        self.check_response(response)
 
     ## TODO: is it necessary the self?
     def to_kebab_case(self, text):
@@ -296,17 +271,23 @@ class BeAuthy(object):
         except IOError as e:
             print(f"Error saving file: {e}")
 
+    def reset_icon(self, slug):
+        """
+        Reset a single app icons.
+        """
+        url = f"https://{self.hostname}/api/v3/core/applications/{slug}/set_icon/"
+
+        response = requests.post(url,
+                                 headers=self.headers,
+                                 files={'clear': (None, 'true')})
+        self.check_response(response)
+
     def reset_icons(self):
         """
         Reset all application icons.
         """
         for app in self.apps:
-            #self.request("POST", "core/applications", params=app['slug'], payload={'clear':'True'})
-            url = f"https://{self.hostname}/api/v3/core/applications/{app['slug']}/set_icon/"
-            headers = { 'Authorization': f'Bearer {self.token}' }
-            form_data = { "clear": (None, "true") }
-
-            response = requests.post(url, headers=headers, files=form_data)
+            self.reset_icon(app['slug'])
 
 
     def batch_request(self):
@@ -343,30 +324,36 @@ class BeAuthy(object):
                                                f'Name of {app['name']} publisher.'
                                                f'If the app can be tracked back to github, reply just the repo link',
                                         think=False)
-            print(f'Generated description (by {model}): {publisher.response}')
+            print(f'Generated publisher (by {model}): {publisher.response}')
 
             # Patch both values to authentik
-            ba.request('PATCH', 'core/applications',
-                       params=[app['slug']],
-                       payload={'meta_publisher': publisher.response,
-                                'meta_description': brief.response})
+            url = f"https://{self.hostname}/api/v3/core/applications/{app['slug']}/"
+
+            response = requests.patch(url,
+                                      headers=self.headers,
+                                      json={ 'meta_publisher': publisher.response,
+                                             'meta_description': brief.response } )
+            self.check_response(response)
+
+    def full_run(self):
+        # Reset icons
+        self.reset_icons()
+
+        # Update icons metadata from GitHub
+        # Needs the .env variable for the GitHub access
+        self.update_icons()
+
+        # Search the homarr-labs/dashboard-icons repo to get all icons available
+        # (just the meta, not the actual icons, they are only pointed when requested)
+        self.get_icons(method='url')
+
+        # Use Ollama to generate descriptions and publisher information for applications
+        self.get_apps_info()
 
 if __name__ == '__main__':
     # Initialize the BeAuthy client with environment variables
     # NOTE: must include .env file on the main folder
     ba = BeAuthy(AUTHENTIK_HOST, AUTHENTIK_TOKEN)
+
+    # TODO: Lazy workaround for now
     fire.Fire(ba)
-
-    # Update icons metadata from GitHub
-    # Needs the .env variable for the GitHub access
-    # ba.update_icons()
-
-    # Search the homarr-labs/dashboard-icons repo to get all icons available
-    # (just the meta, not the actual icons, they are only pointed when requested)
-    # ba.get_icons(method='url')
-
-    # Reset all application icons
-    # ba.reset_icons()
-
-    # Use Ollama to generate descriptions and publisher information for applications
-    # ba.get_apps_info()

@@ -16,9 +16,7 @@ __NOTE__: this is really rough so far, use with caution.
 ## Prerequisites 🛠️
 
 - Python 3.13.3
-- `requests`, `pickle`, `json`, `re` libraries
-- `dotenv`, `github` libraries
-- `ollama` library
+- `requests`, `pickle`, `json`, `re`, `fire`, `dotenv`, `github`, `ollama` libraries
 - GitHub token with access to the [homarr-labs/dashboard-icons](https://github.com/homarr-labs/dashboard-icons) repository
 - Authentik server credentials (hostname and API token)
 
@@ -30,9 +28,9 @@ __NOTE__: this is really rough so far, use with caution.
    cd beauthy
    ```
 
-2. Install the required packages using `uv`, the project's package manager:
+2. Sync the required packages using `uv`, the project's package manager:
    ```bash
-   uv add requests ollama github python-dotenv
+   uv sync
    ```
 
 3. Set up environment variables in a `.env` file:
@@ -43,26 +41,38 @@ __NOTE__: this is really rough so far, use with caution.
    ```
 
 ## Usage 🚀
-Woeking on this, for now, you can edit the main beauthy.py to call the functions you might need.
+Working on this, for now, you can edit the main [beauthy.py](./beauthy.py) to call the functions you might need.
 
 1. **Update Icons Metadata** 🔃
+    This updates the metadata for icons. Run this prio to other operations.
    ```bash
-   uv run beauthy.py --update-icons
+   uv run beauthy.py update_icons
    ```
 
 2. **Get and Set Icons** 🎨
+    This will search the meta database for icons and apply them to all Authentik apps. The search method is based on the app __slug__, so keep it as simple and in kebab case as possible (see helper function ``to_kebab_case()``). The only tested method for now is url. Adding file upload soon.
+    
+    > [!NOTE] 
+   > apps icon would take some time to show on Authentik's dashboard but will reflect the change almost inmediately on the ``Settings > Applications menu``.
    ```bash
-   uv run beauthy.py --get-icons --method url
+   uv run beauthy.py get_icons
    ```
 
-3. **Reset All Icons** 🔄
+3. **Reset a single app or all apps Icons** 🔄
+    Sometimes (haven't identify the reason) the app would show a big Application Icon msg on authentik instead of the actual icon. Just reset the app icon.
    ```bash
-   uv run beauthy.py --reset-icons
+   uv run beauthy.py reset_icon "slug"
+   uv run beauthy.py reset_icons
    ```
 
 4. **Generate Descriptions and Publishers** 🤖
    ```bash
-   uv run beauthy.py --generate-info
+   uv run beauthy.py generate_info
+   ```
+5. **Full run!**
+   This will execute all the above commands, reset icons, get meta for icons, update icons urls and then generate the description and publisher with Ollama. 
+   ```bash
+   uv run beauthy.py full_run
    ```
 
 ## Contributing 👥
