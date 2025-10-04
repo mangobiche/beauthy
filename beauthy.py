@@ -5,6 +5,7 @@ import re
 import pickle
 import json
 import fire
+import random
 from dotenv import load_dotenv
 from github import Github
 
@@ -111,9 +112,9 @@ class BeAuthy(object):
 
     def update_icons(self):
         """
-        Update the icons metadata from the GitHub repository.
+        Update icons metadata from the GitHub repository.
 
-        :return: List of icons metadata.
+        :return: List of icon metadata.
         """
         # Get all icons from the repo
         g = Github(GITHUB_TOKEN)
@@ -130,10 +131,11 @@ class BeAuthy(object):
 
         return icons_meta
 
-    def get_icons(self, icon_format='default', theme='dark', save_path='./icons', method='file'):
+    def get_icons(self, slugs=None, icon_format='default', theme='dark', save_path='./icons', method='url'):
         """
         Get and set icons for all applications.
 
+        :param slugs: If no slugs are given, then get all apps.
         :param icon_format: The format of the icon (e.g., 'svg', 'png').
         :param theme: The color theme of the icon ('light' or 'dark').
         :param save_path: The directory to save the icons.
@@ -142,16 +144,21 @@ class BeAuthy(object):
         # the name is host? nah
         icons_host = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/"
 
+        if slugs is None:
+            slugs = [app['slug'] for app in self.apps]
+        else:
+            slugs = [slugs]
+
         # Evaluate meta for each icon requested
-        counter = 0
-        for app in self.apps:
+        counter = 1
+        for slug in slugs:
             # search for app on icons meta, prioritize full match
             icon_found = False
             icon_meta_path = ''
-            print(f"Evaluating {app['slug']}...{counter}")
+            print(f"Evaluating {slug}...({counter}/{len(slugs)})")
 
             for icon in self.icons_meta:
-                if icon.path == f"meta/{app['slug']}.json":
+                if icon.path == f"meta/{slug}.json":
                     icon_meta_path = icon.path
                     icon_found = True
                     break
@@ -159,7 +166,7 @@ class BeAuthy(object):
             if not icon_found:
                 for icon in self.icons_meta:
                     # go after starts with
-                    if icon.path.startswith(f"meta/{app['slug']}"):
+                    if icon.path.startswith(f"meta/{slug}"):
                         icon_meta_path = icon.path
                         icon_found = True
                         break
@@ -167,14 +174,14 @@ class BeAuthy(object):
             if not icon_found:
                 for icon in self.icons_meta:
                     # ate least is somewhere in!
-                    if app['slug'] in icon.path:
+                    if slug in icon.path:
                         icon_meta_path = icon.path
                         icon_found = True
                         break
 
             # no icon found for slug
             if icon_found:
-                print(f"Found icon for {app['slug']} in path: {icon_meta_path}")
+                print(f"Found icon for {slug} in path: {icon_meta_path}")
                 icon_filename = icon_meta_path.replace("meta/", "")
                 icon_filename = icon_filename.replace(".json", "")
 
@@ -199,13 +206,13 @@ class BeAuthy(object):
                 if method == 'file':
                     # TODO: its only used here, move it to add_icon
                     # self.download_file(url, filename, save_path)
-                    self.core_applications_set_icon_create(app['slug'],
+                    self.core_applications_set_icon_create(slug,
                                                            f"{save_path}/{icon_filename}.{icon_format}")
                 elif method == "url":
-                    self.core_applications_set_icon_url_create(app['slug'], icon_url)
+                    self.core_applications_set_icon_url_create(slug, icon_url)
 
             else:
-                print(f"No icon found for {app['slug']}! Check slug and try again.")
+                print(f"No icon found for {slug}! Check slug and try again.")
 
             counter += 1
 
@@ -271,24 +278,22 @@ class BeAuthy(object):
         except IOError as e:
             print(f"Error saving file: {e}")
 
-    def reset_icon(self, slug):
+    def reset_icons(self, slugs=None):
         """
-        Reset a single app icons.
+        Reset all application icons. Use --slug for a single app
         """
-        url = f"https://{self.hostname}/api/v3/core/applications/{slug}/set_icon/"
+        if slugs is None:
+            slugs = [app['slug'] for app in self.apps]
+        else:
+            slugs = [slugs]
 
-        response = requests.post(url,
-                                 headers=self.headers,
-                                 files={'clear': (None, 'true')})
-        self.check_response(response)
+        for slug in slugs:
+            url = f"https://{self.hostname}/api/v3/core/applications/{slug}/set_icon/"
 
-    def reset_icons(self):
-        """
-        Reset all application icons.
-        """
-        for app in self.apps:
-            self.reset_icon(app['slug'])
-
+            response = requests.post(url,
+                                     headers=self.headers,
+                                     files={'clear': (None, 'true')})
+            self.check_response(response)
 
     def batch_request(self):
         """
@@ -301,33 +306,41 @@ class BeAuthy(object):
             #
             print('get away from this, for now')
 
-    def get_apps_info(self, model='qwen3:14b'):
+    def get_apps_info(self, slugs=None, model='qwen3:14b'):
         """
         Use AI (Ollama) to generate descriptions and other possible tags for applications.
 
         :param model: The AI model to use.
         """
-        for app in self.apps:
+        if slugs is None:
+            slugs = [app['slug'] for app in self.apps]
+        else:
+            slugs = [slugs]
+
+        for slug in slugs:
             # Generate description
-            print(f'Generating {app["slug"]}...')
+            print(f'Generating {slug}...')
             brief = ollama.generate(model=model,
                                     prompt=f'No introductions, plain answer.'
-                                           f'A brief description, no more than 2 lines for this app: {app['name']}.'
+                                           f'A brief description, no more than 2 lines for this app: {slug}.'
                                            f'Cocky tone, funny, daring, you''re talking about a homelab',
-                                    think=False)
+                                    think=False,
+                                    options={'seed': random.randint(0, 999999999),
+                                             'temperature': 1})
             print(f'Generated description (by {model}): {brief.response}')
 
             # Generate publisher
-            print(f'Generating {app["slug"]}...')
+            print(f'Generating {slug}...')
             publisher = ollama.generate(model=model,
                                         prompt=f'No introductions, plain answer.' 
-                                               f'Name of {app['name']} publisher.'
+                                               f'Name of {slug} publisher.'
                                                f'If the app can be tracked back to github, reply just the repo link',
-                                        think=False)
+                                        think=False,
+                                        options={'seed': random.randint(0, 999999999)})
             print(f'Generated publisher (by {model}): {publisher.response}')
 
             # Patch both values to authentik
-            url = f"https://{self.hostname}/api/v3/core/applications/{app['slug']}/"
+            url = f"https://{self.hostname}/api/v3/core/applications/{slug}/"
 
             response = requests.patch(url,
                                       headers=self.headers,
@@ -345,7 +358,7 @@ class BeAuthy(object):
 
         # Search the homarr-labs/dashboard-icons repo to get all icons available
         # (just the meta, not the actual icons, they are only pointed when requested)
-        self.get_icons(method='url')
+        self.get_icons()
 
         # Use Ollama to generate descriptions and publisher information for applications
         self.get_apps_info()
