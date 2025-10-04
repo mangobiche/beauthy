@@ -46,22 +46,22 @@ __NOTE__: this is really rough so far, use with caution.
 
 1. **Update Icons Metadata** 🔃
    ```bash
-   python beauthy.py --update-icons
+   uv run beauthy.py --update-icons
    ```
 
 2. **Get and Set Icons** 🎨
    ```bash
-   python beauthy.py --get-icons --method url
+   uv run beauthy.py --get-icons --method url
    ```
 
 3. **Reset All Icons** 🔄
    ```bash
-   python beauthy.py --reset-icons
+   uv run beauthy.py --reset-icons
    ```
 
 4. **Generate Descriptions and Publishers** 🤖
    ```bash
-   python beauthy.py --generate-info
+   uv run beauthy.py --generate-info
    ```
 
 ## Contributing 👥
