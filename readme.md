@@ -43,6 +43,7 @@ __NOTE__: this is really rough so far, use with caution.
    ```
 
 ## Usage 🚀
+Woeking on this, for now, you can edit the main beauthy.py to call the functions you might need.
 
 1. **Update Icons Metadata** 🔃
    ```bash
