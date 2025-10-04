@@ -4,6 +4,7 @@ import ollama
 import re
 import pickle
 import json
+import fire
 from dotenv import load_dotenv
 from github import Github
 
@@ -354,10 +355,11 @@ if __name__ == '__main__':
     # Initialize the BeAuthy client with environment variables
     # NOTE: must include .env file on the main folder
     ba = BeAuthy(AUTHENTIK_HOST, AUTHENTIK_TOKEN)
+    fire.Fire(ba)
 
     # Update icons metadata from GitHub
     # Needs the .env variable for the GitHub access
-    ba.update_icons()
+    # ba.update_icons()
 
     # Search the homarr-labs/dashboard-icons repo to get all icons available
     # (just the meta, not the actual icons, they are only pointed when requested)
@@ -367,4 +369,4 @@ if __name__ == '__main__':
     # ba.reset_icons()
 
     # Use Ollama to generate descriptions and publisher information for applications
-    ba.get_apps_info()
+    # ba.get_apps_info()
