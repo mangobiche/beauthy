@@ -1,10 +1,10 @@
 # BeAuthy 🚀
 
-BeAuthy is a Python script designed to interact with an Authentik server and make it prettier (beauty-authentik). It started because I'm lazy and didn't want to manually setup every icon in my homelab (23 apps and counting), so I wanted a more sustaible and cleaner way to do it. 
+BeAuthy is a Python script designed to interact with an [Authentik](https://github.com/goauthentik/authentik/) server and make it prettier (beauty-authentik). It started because I'm lazy and didn't want to manually setup every icon for every app in authentik (my homelab has 23 apps and counting), so I wanted a more sustainable and cleaner way to do it. 
 
 It automates the process of fetching applications, setting icons, updating metadata, and leveraging AI to generate descriptions and publisher information.
 
-__NOTE__: this is almost a scratchpad, use with caution.
+__NOTE__: this is really rough so far, use with caution.
 
 ## Features 🌟
 
@@ -26,8 +26,8 @@ __NOTE__: this is almost a scratchpad, use with caution.
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd <repository-name>
+   git clone https://github.com/mangobiche/beauthy
+   cd beauthy
    ```
 
 2. Install the required packages using `uv`, the project's package manager:
@@ -43,25 +43,26 @@ __NOTE__: this is almost a scratchpad, use with caution.
    ```
 
 ## Usage 🚀
+Woeking on this, for now, you can edit the main beauthy.py to call the functions you might need.
 
 1. **Update Icons Metadata** 🔃
    ```bash
-   python beauthy.py --update-icons
+   uv run beauthy.py --update-icons
    ```
 
 2. **Get and Set Icons** 🎨
    ```bash
-   python beauthy.py --get-icons --method url
+   uv run beauthy.py --get-icons --method url
    ```
 
 3. **Reset All Icons** 🔄
    ```bash
-   python beauthy.py --reset-icons
+   uv run beauthy.py --reset-icons
    ```
 
 4. **Generate Descriptions and Publishers** 🤖
    ```bash
-   python beauthy.py --generate-info
+   uv run beauthy.py --generate-info
    ```
 
 ## Contributing 👥
