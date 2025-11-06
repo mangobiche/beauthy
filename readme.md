@@ -68,8 +68,8 @@ Working on this, for now, you can edit the main [beauthy.py](./beauthy.py) to ca
 
 4. **Generate Descriptions and Publishers** 🤖
    ```bash
-   uv run beauthy.py generate_info
-   uv run beauthy.py generate_info "single_app_slug"   
+   uv run beauthy.py get_apps_info
+   uv run beauthy.py get_apps_info "single_app_slug"   
    ```
 5. **Full run!**
    This will execute all the above commands, reset icons, get meta for icons, update icons urls and then generate the description and publisher with Ollama. This is mainly for testing purposes 
